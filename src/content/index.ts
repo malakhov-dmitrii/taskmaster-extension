@@ -1,11 +1,15 @@
-import Overlay from "../components/Overlay.svelte";
-import { storage } from "../storage";
+// import 'virtual:windi.css';
+import Main from 'src/content/Main.svelte';
+import { storage } from '../storage';
 
 // Some global styles on the page
-import "./styles.css";
+import './styles.css';
 
-// Some JS on the page
-storage.get().then(console.log);
+console.log('Hello from content script!');
 
-// Some svelte component on the page
-new Overlay({ target: document.body });
+const root = document.createElement('div');
+root.id = 'extension-root';
+document.body.appendChild(root);
+
+const render = () => new Main({ target: root });
+render();

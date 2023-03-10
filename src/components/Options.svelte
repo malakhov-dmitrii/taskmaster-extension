@@ -1,60 +1,47 @@
 <script lang="ts">
-    import { storage } from "../storage";
+  import { useQuery } from '@sveltestack/svelte-query';
+  import EditItemView from 'src/components/EditItemView.svelte';
+  import PopupHeader from 'src/components/PopupHeader.svelte';
+  import QueryProvider from 'src/components/QueryProvider.svelte';
+  import SignIn from 'src/components/SignIn.svelte';
+  import ViewItemsList from 'src/components/ViewItemsList.svelte';
+  import { supabase } from 'src/lib/db';
+  import type { StorageSession } from 'src/storage';
 
-    export let count: number;
-    let successMessage: string = null;
+  export let session: StorageSession;
+  let params = location.search
+    .replaceAll('?', '')
+    .split('&')
+    .map(i => {
+      const [key, v] = i.split('=');
+      return { [key]: v };
+    });
 
-    function increment() {
-        count += 1;
-    }
-
-    function decrement() {
-        count -= 1;
-    }
-
-    function save() {
-        storage.set({ count }).then(() => {
-            successMessage = "Options saved!";
-
-            setTimeout(() => {
-                successMessage = null;
-            }, 1500);
-        });
-    }
+  const editTaskId = params.find(i => i.editTaskId)?.editTaskId;
 </script>
 
-<div class="container">
-    <p>Current count: <b>{count}</b></p>
-    <div>
-        <button on:click={decrement}>-</button>
-        <button on:click={increment}>+</button>
-        <button on:click={save}>Save</button>
-        {#if successMessage}<span class="success">{successMessage}</span>{/if}
+<QueryProvider>
+  {#if !session.chat_id}
+    <div class="container py-4 text-base">
+      <SignIn {session} />
     </div>
-</div>
+  {:else}
+    <div class="container py-4 text-base">
+      <PopupHeader {session} />
+      <div class="px-4 mt-2">
+        {#if editTaskId}
+          <EditItemView id={editTaskId} />
+        {:else}
+          <ViewItemsList chat_id={session.chat_id} />
+        {/if}
+      </div>
+    </div>
+  {/if}
+</QueryProvider>
 
 <style>
-    .container {
-        min-width: 250px;
-    }
-
-    button {
-        border-radius: 2px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-        background-color: #2ecc71;
-        color: #ecf0f1;
-        transition: background-color 0.3s;
-        padding: 5px 10px;
-        border: none;
-    }
-
-    button:hover,
-    button:focus {
-        background-color: #27ae60;
-    }
-
-    .success {
-        color: #2ecc71;
-        font-weight: bold;
-    }
+  .container {
+    min-width: 450px;
+    max-width: 450px;
+  }
 </style>

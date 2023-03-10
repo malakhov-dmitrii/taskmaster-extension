@@ -1,3 +1,25 @@
-body {
-    background: rgba(232, 240, 254, 0.4) !important;
+/* fixed bg-slate-700 h-max w-max bottom-4 text-xs right-4 text-white rounded-full shadow-md cursor-pointer z-10 px-3 font-medium border-2 border-white py-1 */
+.create-task-btn {
+    position: fixed;
+    background-color: #4a5568;
+    max-height: 100%;
+    max-width: 100%;
+    bottom: 4rem;
+    right: 4rem;
+    text-align: center;
+    color: #fff;
+    border-radius: 9999px;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    z-index: 10;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    border: 2px solid #fff;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 1.1rem;
+    line-height: 1.5rem;
+    transition: all 0.2s ease-in-out;
+
+
 }
