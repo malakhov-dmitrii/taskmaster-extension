@@ -29,18 +29,20 @@
     <div class="bg-gray-300 rounded shadow animate-pulse h-4 w-1/2" />
   {/if}
 
-  <!-- <button
-    class="border border-gray-300 rounded px-2 text-xs shadow font-medium py-1"
-    on:click={() => {
-      chrome.storage.sync.clear();
-      window.location.reload();
-    }}>Sign out</button
-  > -->
-  <button
-    class="border border-gray-300 rounded px-2 text-xs shadow font-medium py-1"
-    on:click={() => {
-      queryClient.invalidateQueries('todos');
-      queryClient.refetchQueries('todos');
-    }}>Refresh</button
-  >
+  <div class="flex space-x-1">
+    <button
+      class="border border-gray-300 rounded px-2 text-xs shadow font-medium py-1"
+      on:click={() => {
+        queryClient.invalidateQueries('todos');
+        queryClient.refetchQueries('todos');
+      }}>Refresh</button
+    >
+    <button
+      class="border border-gray-300 rounded px-2 text-xs shadow font-medium py-1"
+      on:click={() => {
+        chrome.storage.sync.clear();
+        window.location.reload();
+      }}>Sign Out</button
+    >
+  </div>
 </div>

@@ -21,31 +21,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   console.log('session', session);
 
   if (!session?.chat_id) {
+    console.log('no session', session);
+
     return;
     // alert('Please login via the extension popup to create a new task.');
   }
-
-  // get tab DOM
-  const tabDOM = await new Promise(resolve => {
-    chrome.scripting
-      .executeScript({
-        target: { tabId: tab.id, allFrames: true },
-        func: () => {
-          const innerText = document.documentElement.innerText;
-          return innerText;
-        },
-      })
-      .then(injectionResults => injectionResults.flat())
-      .then(r =>
-        fetch('https://name-recognition-production.up.railway.app/api/names', {
-          method: 'POST',
-          body: JSON.stringify({ text: r[0].result }),
-        })
-      )
-      .then(r => r.json());
-  });
-
-  console.log('tabDOM', tabDOM);
 
   if (info.menuItemId === 'createTaskFromText') {
     const res = await supabase

@@ -99,5 +99,3 @@
     {/if}
   </div>
 {/if}
-
-<!-- style={`top: ${selectionNodeRect?.top + 30}px; left: ${selectionNodeRect?.left}px;`} -->
