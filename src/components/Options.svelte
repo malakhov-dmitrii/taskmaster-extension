@@ -1,43 +1,94 @@
 <script lang="ts">
+  import type { Profile, Session, SessionWithUser } from 'src/lib/types';
   import { useQuery } from '@sveltestack/svelte-query';
   import EditItemView from 'src/components/EditItemView.svelte';
   import PopupHeader from 'src/components/PopupHeader.svelte';
   import QueryProvider from 'src/components/QueryProvider.svelte';
+  import SelectChatPlaceholder from 'src/components/SelectChatPlaceholder.svelte';
   import SignIn from 'src/components/SignIn.svelte';
   import ViewItemsList from 'src/components/ViewItemsList.svelte';
-  import { supabase } from 'src/lib/db';
-  import type { StorageSession } from 'src/storage';
+  import { onMount } from 'svelte';
 
-  export let session: StorageSession;
+  import PocketBase from 'pocketbase';
+  import EmptyList from 'src/components/EmptyList.svelte';
+
+  export const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
+
+  export let profile: Profile;
+  let session: Session | null = null;
+  let chat_id: string | null = null;
+
   let params = location.search
     .replaceAll('?', '')
     .split('&')
-    .map(i => {
+    .map((i) => {
       const [key, v] = i.split('=');
       return { [key]: v };
     });
 
-  const editTaskId = params.find(i => i.editTaskId)?.editTaskId;
+  $: isChat = false;
+
+  const handleGetSession = async (chat_id: string) => {
+    console.log({ chat_id });
+
+    const existing = await pb.collection('sessions').getFullList<SessionWithUser>({
+      expand: 'users',
+      filter: `users.telegram_id="${chat_id}"`,
+    });
+    if (existing.length > 0) {
+      console.log(existing.filter((i) => i.users.includes(profile.id)));
+
+      session = existing.find((i) => i.users.includes(profile.id));
+    }
+
+    console.log({ session, chat_id });
+  };
+
+  onMount(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const url = tabs[0].url;
+      chat_id = url.split('#')[1];
+      if (url.includes('web.telegram.org') && !!chat_id) {
+        isChat = true;
+        handleGetSession(chat_id);
+      }
+    });
+  });
+
+  const editTaskId = params.find((i) => i.editTaskId)?.editTaskId;
 </script>
 
-<QueryProvider>
-  {#if !session.chat_id}
-    <div class="container py-4 text-base">
-      <SignIn {session} />
-    </div>
-  {:else}
-    <div class="container py-4 text-base">
-      <PopupHeader {session} />
-      <div class="px-4 mt-2">
+{#if !isChat && !editTaskId}
+  <div class="container px-4 py-4 text-base">
+    <SelectChatPlaceholder />
+  </div>
+{:else}
+  <QueryProvider>
+    {#if !profile.telegram_id}
+      <div class="container py-4 text-base">
+        <SignIn {profile} />
+      </div>
+    {:else}
+      <div class="container py-4 text-base">
+        <PopupHeader {chat_id} session_id={session?.id} />
         {#if editTaskId}
-          <EditItemView id={editTaskId} />
+          <div class="px-4 mt-2">
+            <EditItemView id={editTaskId} />
+          </div>
         {:else}
-          <ViewItemsList chat_id={session.chat_id} />
+          <div class="px-4 mt-2">
+            {#if session?.id}
+              <ViewItemsList session_id={session?.id} profile_id={profile?.id} />
+            {:else}
+              <EmptyList />
+              Code: 1
+            {/if}
+          </div>
         {/if}
       </div>
-    </div>
-  {/if}
-</QueryProvider>
+    {/if}
+  </QueryProvider>
+{/if}
 
 <style>
   .container {

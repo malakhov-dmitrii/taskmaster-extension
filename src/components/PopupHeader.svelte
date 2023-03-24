@@ -1,48 +1,51 @@
 <script lang="ts">
-  import { useQuery, useQueryClient } from '@sveltestack/svelte-query';
-  import { supabase } from 'src/lib/db';
-  import type { StorageSession } from 'src/storage';
-
-  export let session: StorageSession;
-  let chatQuery = useQuery('chat', () => {
-    if (!session.chat_id) return Promise.resolve(null);
-    return Promise.resolve(supabase.from('pa_chats').select().eq('id', session.chat_id).single());
-  });
-
+  import Button from '../ui/Button.svelte';
+  import { useQueryClient } from '@sveltestack/svelte-query';
+  import { pb } from 'src/lib/db';
   let queryClient = useQueryClient();
+
+  export let chat_id: string;
+  export let session_id: string;
 </script>
 
-<div class="px-4 border-b border-gray-400 pb-4 flex items-center justify-between">
-  {#if !$chatQuery.isLoading}
-    <div class="flex items-center space-x-2">
-      <p>
-        Chat join code: <strong class="tracking-widest font-mono">{$chatQuery.data?.data.join_code}</strong>
-      </p>
-      <button
-        class="text-xs border border-gray-300 px-2 shadow font-medium rounded py-1"
-        on:click={() => {
-          navigator.clipboard.writeText($chatQuery.data?.data.join_code);
-        }}>Copy</button
-      >
-    </div>
-  {:else}
-    <div class="bg-gray-300 rounded shadow animate-pulse h-4 w-1/2" />
-  {/if}
-
-  <div class="flex space-x-1">
-    <button
-      class="border border-gray-300 rounded px-2 text-xs shadow font-medium py-1"
+<div class="px-4 border-b border-slate-300 pb-4 flex items-center justify-between">
+  <div class="flex space-x-2">
+    <Button
+      variant="subtle"
+      size="sm"
       on:click={() => {
         queryClient.invalidateQueries('todos');
         queryClient.refetchQueries('todos');
-      }}>Refresh</button
+      }}>Refresh</Button
     >
-    <button
-      class="border border-gray-300 rounded px-2 text-xs shadow font-medium py-1"
+    <Button
+      variant="ghost"
+      size="sm"
       on:click={() => {
+        console.log('sign out');
+
         chrome.storage.sync.clear();
         window.location.reload();
-      }}>Sign Out</button
+      }}>Sign Out</Button
     >
   </div>
+
+  <Button
+    size="sm"
+    disabled={!session_id}
+    on:click={async () => {
+      const res = await pb.collection('tasks').create({
+        session: session_id,
+        title: 'New Task',
+      });
+
+      chrome.windows.create({
+        url: chrome.runtime.getURL(`src/popup/popup.html?editTaskId=${res.id}`),
+        type: 'popup',
+        width: 450,
+        height: 700,
+      });
+    }}
+    }}>New Task</Button
+  >
 </div>

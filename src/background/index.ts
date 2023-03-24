@@ -1,4 +1,5 @@
-import { supabase } from 'src/lib/db';
+import { pb, supabase } from 'src/lib/db';
+import type { Profile, SessionWithUser, Task } from 'src/lib/types';
 import type { StorageSession } from '../storage';
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -71,3 +72,33 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       });
   }
 });
+
+// chrome.tabs.onActivated.addListener(async (activeInfo) => {
+//   const storage = await chrome.storage.sync.get();
+//   const profile = storage.profile as Profile;
+//   chrome.tabs.get(activeInfo.tabId, async (tab) => {
+//     if (tab.url.includes('web.telegram.org')) {
+//       const chat_id = tab.url.split('#')[1];
+//       if (chat_id) {
+//         const existing = await pb.collection('sessions').getFullList<SessionWithUser>({
+//           expand: 'users',
+//           filter: `users.telegram_id="${chat_id}"`,
+//         });
+//         if (existing.length > 0) {
+//           console.log(existing.filter((i) => i.users.includes(profile.id)));
+
+//           const session = existing.find((i) => i.users.includes(profile.id));
+
+//           const tasks = await pb.collection('tasks').getFullList<Task>({
+//             filter: `session.id="${session.id}"`,
+//           });
+
+//           chrome.action.setBadgeText({
+//             text: `${tasks.filter((i) => !i.is_completed).length}`,
+//             tabId: activeInfo.tabId,
+//           });
+//         }
+//       }
+//     }
+//   });
+// });

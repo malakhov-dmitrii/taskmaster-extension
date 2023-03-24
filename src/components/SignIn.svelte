@@ -1,69 +1,76 @@
 <script lang="ts">
+  import Button from '../ui/Button.svelte';
   import { useMutation } from '@sveltestack/svelte-query';
-  import { supabase } from 'src/lib/db';
+  import { pb, supabase } from 'src/lib/db';
   import { getRandomCode } from 'src/lib/utils';
-  import type { StorageSession } from 'src/storage';
+  import { storage, type StorageSession } from 'src/storage';
+  import type { Profile, Session } from 'src/lib/types';
 
-  export let session: StorageSession;
-  $: sessionCode = '';
-  let updateNameMutation = useMutation('setusername', () =>
-    Promise.resolve(supabase.from('pa_profiles').update({ username: session.username }).eq('id', session.id))
-  );
+  export let profile: Profile;
 
-  /**
-   * We need to get chat by join_code. If it doesn't exist, we need to create it.
-   */
-  let findOrCreateSession = useMutation(
-    'findOrCreateSession',
-    async () => {
-      $updateNameMutation.mutate();
-      if (!sessionCode) {
-        return Promise.resolve(
-          supabase.from('pa_chats').insert({ join_code: getRandomCode(), assistant_id: session.id }).select().single()
-        );
-      } else {
-        const chat = await supabase.from('pa_chats').update({ client_id: session.id }).eq('join_code', sessionCode).select().single();
-        await supabase.from('pa_profiles').update({ role: 'client' }).eq('id', session.id);
-        return Promise.resolve(chat);
-      }
-    },
-    {
-      onSuccess: async data => {
-        if (data) {
-          session.chat_id = data.data.id;
-          await chrome.storage.sync.set({ session });
-          window.location.reload();
-        }
-      },
+  const openTelegram = async () => chrome.tabs.create({ url: 'https://web.telegram.org/' });
+
+  const handleSave = async () => {
+    const existing = await pb.collection('profiles').getFullList<Profile>({
+      filter: `telegram_id="${profile.telegram_id}"`,
+    });
+    if (existing) {
+      profile.id = existing[0].id;
     }
-  );
+
+    const profileUpdate = await pb
+      .collection('profiles')
+      .update(profile.id, { name: profile.name, telegram_id: profile.telegram_id });
+    if (profileUpdate.error) {
+      console.log(profileUpdate.error);
+    } else {
+      await storage.set({ profile });
+      window.location.reload();
+    }
+  };
 </script>
 
 <div class=" space-y-4 px-4 text-base">
-  <!-- <button on:click={() => chrome.storage.sync.clear()}>clear session</button> -->
-  <h1 class="font-bold text-2xl">Create new session</h1>
-
-  <div class="">
-    <label class="">
-      <p class="text-sm">If you have session code, enter it here</p>
-      <input bind:value={sessionCode} type="text" placeholder="123456" class="border rounded px-2 py-1 w-full" />
-    </label>
+  <div class="flex justify-between items-center">
+    <h1 class="font-bold text-2xl">Sign Up</h1>
   </div>
 
-  <div class="">
-    <label class="">
-      <p class="text-sm">Enter your name</p>
-      <input bind:value={session.username} placeholder="ex.: Dmitrii" type="text" class="border rounded px-2 py-1 w-full" />
-    </label>
+  <div class="flex space-x-4">
+    <div class="w-full">
+      <label class="">
+        <p class="text-sm">Name</p>
+        <input
+          bind:value={profile.name}
+          placeholder="ex.: Dmitrii"
+          type="text"
+          class="mt-1 flex h-10 w-full rounded-md border border-slate-300 bg-transparent py-2 px-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-slate-400 dark:focus:ring-offset-slate-900"
+        />
+      </label>
+    </div>
   </div>
 
-  <div>
-    <button
-      on:click={async () => {
-        if (!session.username.trim()) return;
-        $findOrCreateSession.mutate();
-      }}
-      class="bg-blue-500 w-full rounded shadow px-6 py-2 text-white font-medium">Start</button
+  <div class="flex space-x-2 items-end">
+    <div class="w-full">
+      <label class="">
+        <p class="text-sm">Telegram ID</p>
+        <input
+          bind:value={profile.telegram_id}
+          type="text"
+          placeholder="ex.: 123456"
+          class="mt-1 flex h-10 w-full rounded-md border border-slate-300 bg-transparent py-2 px-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-slate-400 dark:focus:ring-offset-slate-900"
+        />
+        <p class="text-xs text-slate-600">
+          open Telegram Web, go to Saved Messages, and copy the number from the URL after #
+        </p>
+      </label>
+    </div>
+  </div>
+
+  <div class="flex space-x-2">
+    <Button variant="outline" class="flex-1" on:click={openTelegram}>Open Telegram</Button>
+
+    <Button on:click={handleSave} disabled={!profile.telegram_id?.trim() || !profile.name?.trim()} class="flex-1"
+      >Save</Button
     >
   </div>
 </div>

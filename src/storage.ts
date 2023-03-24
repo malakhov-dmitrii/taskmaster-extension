@@ -1,6 +1,9 @@
+import type { Profile, Session } from 'src/lib/types';
+
 type IStorage = {
   count?: number;
-  session?: StorageSession;
+  session?: Session;
+  profile?: Profile;
 };
 
 export interface StorageSession {

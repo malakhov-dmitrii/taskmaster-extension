@@ -4,3 +4,7 @@ import type { Database } from 'src/lib/database.types';
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient<Database>(supabaseUrl, anonKey);
+
+import PocketBase from 'pocketbase';
+
+export const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
