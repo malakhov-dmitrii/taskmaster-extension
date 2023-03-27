@@ -1,8 +1,6 @@
 <script lang="ts">
   import type { CreateTaskDTO, Profile, Session, SessionWithUser, Task } from 'src/lib/types';
-  // import { createClient } from '@supabase/supabase-js';
-  // import { supabase } from 'src/lib/db';
-  import type { StorageSession } from 'src/storage';
+  // import { updateTasksBadge } from 'src/lib/updateTasksBadge';
   import { onMount } from 'svelte';
   import PocketBase from 'pocketbase';
   import dayjs from 'dayjs';
@@ -120,12 +118,14 @@
       session: session.id,
     };
 
-    // const newProfile = await pb.collection('profiles').create({});
-
     const res = await pb.collection('tasks').create(newTask);
 
     if (res) {
-      window.open(chrome.runtime.getURL(`src/popup/popup.html?editTaskId=${res.id}`), '_blank', 'width=450,height=700');
+      window.open(
+        chrome.runtime.getURL(`src/popupEdit/popup.html?editTaskId=${res.id}`),
+        '_blank',
+        'width=450,height=700',
+      );
     }
 
     loading = false;

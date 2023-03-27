@@ -30,7 +30,7 @@
     <div
       on:click={() => {
         chrome.windows.create({
-          url: chrome.runtime.getURL(`src/popup/popup.html?editTaskId=${todo.id}`),
+          url: chrome.runtime.getURL(`src/popupEdit/popup.html?editTaskId=${todo.id}`),
           type: 'popup',
           width: 450,
           height: 700,

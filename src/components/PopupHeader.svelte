@@ -39,7 +39,7 @@
       });
 
       chrome.windows.create({
-        url: chrome.runtime.getURL(`src/popup/popup.html?editTaskId=${res.id}`),
+        url: chrome.runtime.getURL(`src/popupEdit/popup.html?editTaskId=${res.id}`),
         type: 'popup',
         width: 450,
         height: 700,

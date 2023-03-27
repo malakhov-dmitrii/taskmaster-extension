@@ -1,4 +1,4 @@
-const { fontFamily } = require('tailwindcss/defaultTheme');
+// const { fontFamily } = require('tailwindcss/defaultTheme');
 
 /** @type {import('windicss').Config} */
 
@@ -11,7 +11,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', ...fontFamily.sans],
+        sans: ['Graphik', 'sans-serif'],
       },
       keyframes: {
         'accordion-down': {
