@@ -12,6 +12,7 @@ export interface Profile {
   name?: string;
   telegram_id?: string;
   sessions?: string[];
+  verified?: boolean;
 }
 
 export interface Session {

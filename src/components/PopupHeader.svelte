@@ -14,8 +14,7 @@
       variant="subtle"
       size="sm"
       on:click={() => {
-        queryClient.invalidateQueries('todos');
-        queryClient.refetchQueries('todos');
+        window.location.reload();
       }}>Refresh</Button
     >
     <Button

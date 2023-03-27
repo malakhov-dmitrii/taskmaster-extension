@@ -21,8 +21,13 @@
 
   onMount(async () => {
     const storage = await chrome.storage.sync.get();
-    profile = storage.profile as Profile;
+    const code = await pb.collection('verification_codes').getOne(storage.code);
+    profile = await pb.collection('profiles').getOne(code.user);
   });
+
+  $: {
+    console.log(profile);
+  }
 
   /**
    * Update button position during selection
@@ -50,14 +55,20 @@
       filter: `users.telegram_id="${chat_id}"`,
     });
     if (existing.length > 0) {
-      console.log(existing.filter((i) => i.users.includes(profile.id)));
+      console.log({ existing });
 
-      const session = existing.find((i) => i.users.includes(profile.id));
+      const session = existing.find((i) => i.users?.includes(profile.id));
 
       if (session) {
         return session;
       }
 
+      const res = await pb.collection('sessions').create<Session>({
+        users: [profile.id],
+      });
+
+      return res;
+    } else {
       const res = await pb.collection('sessions').create<Session>({
         users: [profile.id],
       });
@@ -82,12 +93,14 @@
   };
 
   const ensureSecondUserInSession = async (session: Session, telegram_id: string) => {
+    console.log('session', session);
+
     const secondUser = await handleGetSecondUser(telegram_id);
 
-    if (session.users.includes(secondUser.id)) return;
+    if (session.users?.includes(secondUser.id)) return;
 
     await pb.collection('sessions').update(session.id, {
-      users: [...session.users, secondUser.id],
+      users: [...(session?.users ?? []), secondUser.id],
     });
   };
 

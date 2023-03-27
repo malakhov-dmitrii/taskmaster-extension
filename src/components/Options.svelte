@@ -29,28 +29,29 @@
   $: isChat = false;
 
   const handleGetSession = async (chat_id: string) => {
-    console.log({ chat_id });
-
     const existing = await pb.collection('sessions').getFullList<SessionWithUser>({
       expand: 'users',
       filter: `users.telegram_id="${chat_id}"`,
     });
     if (existing.length > 0) {
-      console.log(existing.filter((i) => i.users.includes(profile.id)));
-
       session = existing.find((i) => i.users.includes(profile.id));
+    } else {
+      session = await pb.collection('sessions').create({
+        users: [profile.id],
+      });
     }
 
     console.log({ session, chat_id });
   };
 
   onMount(() => {
+    // if (!profile) return;
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const url = tabs[0].url;
       chat_id = url.split('#')[1];
       if (url.includes('web.telegram.org') && !!chat_id) {
         isChat = true;
-        handleGetSession(chat_id);
+        if (profile) handleGetSession(chat_id);
       }
     });
   });
@@ -58,35 +59,33 @@
   const editTaskId = params.find((i) => i.editTaskId)?.editTaskId;
 </script>
 
-{#if !isChat && !editTaskId}
+{#if !profile}
+  <div class="container px-4 py-4 text-base">
+    <SignIn />
+  </div>
+{:else if !isChat && !editTaskId}
   <div class="container px-4 py-4 text-base">
     <SelectChatPlaceholder />
   </div>
 {:else}
   <QueryProvider>
-    {#if !profile.telegram_id}
-      <div class="container py-4 text-base">
-        <SignIn {profile} />
-      </div>
-    {:else}
-      <div class="container py-4 text-base">
-        <PopupHeader {chat_id} session_id={session?.id} />
-        {#if editTaskId}
-          <div class="px-4 mt-2">
-            <EditItemView id={editTaskId} />
-          </div>
-        {:else}
-          <div class="px-4 mt-2">
-            {#if session?.id}
-              <ViewItemsList session_id={session?.id} profile_id={profile?.id} />
-            {:else}
-              <EmptyList />
-              Code: 1
-            {/if}
-          </div>
-        {/if}
-      </div>
-    {/if}
+    <div class="container py-4 text-base">
+      <PopupHeader {chat_id} session_id={session?.id} />
+      {#if editTaskId}
+        <div class="px-4 mt-2">
+          <EditItemView id={editTaskId} />
+        </div>
+      {:else}
+        <div class="px-4 mt-2">
+          {#if session?.id}
+            <ViewItemsList session_id={session?.id} profile_id={profile?.id} />
+          {:else}
+            <EmptyList />
+            Code: 1
+          {/if}
+        </div>
+      {/if}
+    </div>
   </QueryProvider>
 {/if}
 

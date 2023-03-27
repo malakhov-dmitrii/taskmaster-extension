@@ -1,6 +1,6 @@
 {
-  "name": "PA Task Manager",
-  "description": "Boilerplate for Chrome Extension Svelte Typescript project",
+  "name": "VA Task Manager",
+  "description": "Extension designed to help virtual assistants and their clients manage tasks effortlessly within Telegram chats",
   "version": "1.0",
   "manifest_version": 3,
   "icons": {
