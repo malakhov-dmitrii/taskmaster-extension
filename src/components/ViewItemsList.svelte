@@ -15,10 +15,18 @@
   export let profile_id: string;
 
   const queryClient = useQueryClient();
-  $: key = `todos/${session_id}/${profile_id}`;
-  const query = useQuery(`todos/${session_id}/${profile_id}`, async () => {
-    return Promise.resolve(pb.collection('tasks').getFullList<Task>({ filter: `session.id="${session_id}"` }));
+
+  $: key = JSON.stringify(['todos', session_id, profile_id]);
+  const query = useQuery([key], async () => {
+    return Promise.resolve(
+      pb.collection('tasks').getFullList<Task>({ filter: `session.id="${session_id}"`, expand: 'session' }),
+    );
   });
+
+  $: {
+    console.log($query.data);
+  }
+
   const deleteMutation = useMutation((id: string) => Promise.resolve(pb.collection('tasks').delete(id)), {
     onMutate: async (id) => {
       await queryClient.cancelQueries(key);
@@ -36,12 +44,48 @@
     },
     onSettled: () => {
       queryClient.invalidateQueries(key);
+      window.location.reload();
     },
   });
+  const toggleAssignMutation = useMutation(
+    async (id: string) => {
+      const task = await pb.collection('tasks').getOne<Task>(id, { expand: 'session' });
+      const secondUserId = task.expand.session?.users.find((i) => i !== profile_id);
 
-  $: {
-    console.log({ profile_id, session_id });
-  }
+      if (task.assigned_to !== profile_id) {
+        return Promise.resolve(pb.collection('tasks').update(id, { assigned_to: profile_id }));
+      } else if (task.assigned_to === profile_id && secondUserId) {
+        return Promise.resolve(pb.collection('tasks').update(id, { assigned_to: secondUserId }));
+      } else {
+        return Promise.resolve(pb.collection('tasks').update(id, { assigned_to: profile_id }));
+      }
+    },
+    {
+      onMutate: async (id) => {
+        await queryClient.cancelQueries([key]);
+        const previousTodos = queryClient.getQueryData<Task[]>([key]);
+        queryClient.setQueryData([key], (old: Task[]) => {
+          return (old ?? previousTodos)?.map((i) => {
+            if (i.id === id) {
+              return { ...i, assigned_to: i.assigned_to === profile_id ? 'any' : profile_id };
+            }
+
+            return i;
+          });
+        });
+
+        return { previousTodos };
+      },
+      onError: (err, newTodo, context) => {
+        queryClient.setQueryData([key], context.previousTodos);
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries([key]);
+        queryClient.refetchQueries([key]);
+        window.location.reload();
+      },
+    },
+  );
 
   const handleCheck = async (todo: Task) => {
     await pb.collection('tasks').update(todo.id, { is_completed: !todo.is_completed });
@@ -57,26 +101,22 @@
 {/if}
 
 {#if $query.data?.length > 0}
-  <p class="font-bold text-xl mt-4">Tasks list:</p>
+  <!-- <p class="font-bold text-xl mt-4">Tasks list:</p> -->
   <div class="space-y-4 mt-4 w-full">
     {#each $query.data as todo}
-      <ListItem {todo} on:check={() => handleCheck(todo)} on:delete={() => $deleteMutation.mutate(todo.id)} />
+      <ListItem
+        {profile_id}
+        {todo}
+        on:toggleAssignee={() => $toggleAssignMutation.mutate(todo.id)}
+        on:check={() => handleCheck(todo)}
+        on:delete={() => $deleteMutation.mutate(todo.id)}
+      />
     {/each}
 
     {#if $query.data.length === 0}
       <p class="text-center my-8">There are no items at this moment.</p>
     {/if}
   </div>
-  <!-- <p class="font-bold text-xl">Outbox:</p>
-  <div class="space-y-4 mt-4 w-full">
-    {#each outboxTodos as todo}
-      <ListItem {todo} on:check={() => handleCheck(todo)} on:delete={() => $deleteMutation.mutate(todo.id)} />
-    {/each}
-
-    {#if outboxTodos.length === 0}
-      <p class="text-center my-8">There are no items at this moment.</p>
-    {/if}
-  </div> -->
 {:else if !$query.isLoading}
   <EmptyList />
 {/if}

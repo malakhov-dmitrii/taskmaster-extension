@@ -43,8 +43,13 @@ async function render() {
   //     window.location.reload();
   //     return null;
   //   });
-
+  target.innerHTML = '';
   new Options({ target, props: { profile } });
 }
 
 document.addEventListener('DOMContentLoaded', render);
+document.addEventListener('focus', render);
+
+chrome.history.onVisited.addListener(async (result) => {
+  render();
+});

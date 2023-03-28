@@ -9,7 +9,9 @@
         variant: {
           default: 'bg-slate-900 text-white hover:bg-slate-700 dark:bg-slate-50 dark:text-slate-900',
           destructive: 'bg-red-500 text-white hover:bg-red-600 dark:hover:bg-red-600',
-          outline: 'bg-transparent border border-slate-200 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100',
+          primary: 'bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500',
+          outline:
+            'bg-transparent border border-slate-200 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100',
           subtle: 'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-100',
           ghost:
             'bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-100 dark:hover:text-slate-100 data-[state=open]:bg-transparent dark:data-[state=open]:bg-transparent',
@@ -26,7 +28,7 @@
         variant: 'default',
         size: 'default',
       },
-    }
+    },
   );
 
   interface ButtonProps extends VariantProps<typeof buttonVariants> {
@@ -36,6 +38,10 @@
   export let size: ButtonProps['size'] | undefined = 'default';
 </script>
 
-<button on:click disabled={$$props.disabled} class={cn(buttonVariants({ size: size, variant: variant, class: $$props.class }))}>
+<button
+  on:click
+  disabled={$$props.disabled}
+  class={cn(buttonVariants({ size: size, variant: variant, class: $$props.class }))}
+>
   <slot />
 </button>

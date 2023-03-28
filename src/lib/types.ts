@@ -13,11 +13,16 @@ export interface Profile {
   telegram_id?: string;
   sessions?: string[];
   verified?: boolean;
+  full_name?: string;
+  username?: string;
 }
 
 export interface Session {
   id: string;
   users: string[];
+  expand?: {
+    users: Profile[];
+  };
 }
 
 export interface SessionWithUser extends Session {
@@ -32,8 +37,11 @@ export interface Task {
   description?: string;
   session: string;
   date: string;
+  etcDate: string;
+  priority: boolean;
   assigned_to: string;
   is_completed: boolean;
+  created: string;
 }
 
 export interface CreateTaskDTO {
@@ -41,5 +49,5 @@ export interface CreateTaskDTO {
   description?: string;
   session: string;
   date?: string;
-  assigned_to_client?: boolean;
+  assigned_to?: string;
 }

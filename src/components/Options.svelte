@@ -27,6 +27,8 @@
     });
 
   $: isChat = false;
+  $: loadedTab = false;
+  $: loadedSession = false;
 
   const handleGetSession = async (chat_id: string) => {
     const existing = await pb.collection('sessions').getFullList<SessionWithUser>({
@@ -40,13 +42,13 @@
         users: [profile.id],
       });
     }
-
-    console.log({ session, chat_id });
+    loadedSession = true;
   };
 
   onMount(() => {
     // if (!profile) return;
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      loadedTab = true;
       const url = tabs[0].url;
       chat_id = url.split('#')[1];
       if (url.includes('web.telegram.org') && !!chat_id) {
@@ -59,39 +61,45 @@
   const editTaskId = params.find((i) => i.editTaskId)?.editTaskId;
 </script>
 
-{#if !profile}
-  <div class="container px-4 py-4 text-base">
-    <SignIn />
-  </div>
-{:else if !isChat && !editTaskId}
-  <div class="container px-4 py-4 text-base">
-    <SelectChatPlaceholder />
-  </div>
-{:else}
-  <QueryProvider>
-    <div class="container py-4 text-base">
-      <PopupHeader {chat_id} session_id={session?.id} />
-      {#if editTaskId}
-        <div class="px-4 mt-2">
-          <EditItemView id={editTaskId} />
-        </div>
-      {:else}
-        <div class="px-4 mt-2">
-          {#if session?.id}
-            <ViewItemsList session_id={session?.id} profile_id={profile?.id} />
-          {:else}
-            <EmptyList />
-            Code: 1
-          {/if}
-        </div>
-      {/if}
+{#if (loadedTab && loadedSession) || (loadedTab && !isChat)}
+  {#if !profile}
+    <div class="container px-4 py-4 text-base">
+      <SignIn />
     </div>
-  </QueryProvider>
+  {:else if !isChat && !editTaskId}
+    <div class="container px-4 py-4 text-base">
+      <SelectChatPlaceholder />
+    </div>
+  {:else}
+    <QueryProvider>
+      <div class="container py-4 text-base">
+        <PopupHeader {chat_id} session_id={session?.id} />
+        {#if editTaskId}
+          <div class="px-4 mt-2">
+            <EditItemView id={editTaskId} />
+          </div>
+        {:else}
+          <div class="px-4 mt-2">
+            {#if session?.id}
+              <ViewItemsList session_id={session?.id} profile_id={profile?.id} />
+            {:else}
+              <EmptyList />
+              Code: 1
+            {/if}
+          </div>
+        {/if}
+      </div>
+    </QueryProvider>
+  {/if}
+{:else}
+  <div class="w-full h-64 container p-4">
+    <div class="bg-slate-100 animate-pulse " />
+  </div>
 {/if}
 
 <style>
   .container {
-    min-width: 450px;
-    max-width: 450px;
+    min-width: 500px;
+    max-width: 500px;
   }
 </style>

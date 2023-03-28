@@ -7,6 +7,7 @@
   import utc from 'dayjs/plugin/utc';
   import timezone from 'dayjs/plugin/timezone';
   import Button from 'src/ui/Button.svelte';
+  import DatePreset from 'src/components/DatePreset.svelte';
 
   dayjs.extend(utc);
   dayjs.extend(timezone);
@@ -14,25 +15,33 @@
   export let id: string;
   let data: Task | null = null;
   let dateTime = null;
+  let etcDateTime = null;
   let loading = true;
+
+  const dateToPicker = (date: string | dayjs.Dayjs) => dayjs(date).toISOString().slice(0, 19).replace('T', ' ');
 
   onMount(async () => {
     data = await pb.collection('tasks').getOne<Task>(id);
     loading = false;
-    if (data.date) dateTime = new Date(data.date).toISOString().slice(0, 16);
+
+    if (data.date) dateTime = dateToPicker(data.date);
+    if (data.etcDate) etcDateTime = dateToPicker(data.etcDate);
   });
 
   let updateItemMutation = useMutation(
     'updateItem',
     () => {
-      const dateTime = data.date ? dayjs.tz(data.date) : null;
+      const dateTimeN = dateTime ? dayjs.tz(dateTime, 'Etc/UTC') : null;
+      const etcDateTimeN = etcDateTime ? dayjs.tz(etcDateTime, 'Etc/UTC') : null;
       console.log({ data });
 
       return Promise.resolve(
         pb.collection('tasks').update(id, {
           title: data.title,
           description: data.description,
-          ...(dateTime && { date: dateTime.toISOString() }),
+          date: dateTimeN ? dateTimeN.toISOString() : null,
+          etcDate: etcDateTimeN ? etcDateTimeN.toISOString() : null,
+          priority: data.priority,
         }),
       );
     },
@@ -45,16 +54,17 @@
       },
       onSettled: () => {
         loading = false;
+        // window.location.reload();
       },
     },
   );
 
   $: {
-    console.log(dateTime);
+    console.log(data);
   }
 </script>
 
-{#if loading}
+{#if loading || !data}
   <p class="text-center font-bold animate-pulse">Loading...</p>
 {:else}
   <main class="space-y-4">
@@ -80,15 +90,47 @@
         />
       </label>
     </div>
+    <Button
+      size="sm"
+      on:click={() => {
+        data.priority = !data?.priority;
+      }}
+      variant={data?.priority ? 'default' : 'outline'}
+    >
+      Priority: {data?.priority}
+    </Button>
+
     <div>
       <label>
-        <p class="font-medium text-sm">Date</p>
+        <p class="font-medium text-sm">Deadline</p>
         <input
           bind:value={dateTime}
           type="datetime-local"
           class="mt-2 flex h-10 w-full rounded-md border border-slate-300 bg-transparent py-2 px-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </label>
+      <DatePreset
+        on:clear={() => {
+          dateTime = null;
+        }}
+        on:change={(v) => (dateTime = dateToPicker(v.detail))}
+      />
+    </div>
+    <div>
+      <label>
+        <p class="font-medium text-sm">ETC</p>
+        <input
+          bind:value={etcDateTime}
+          type="datetime-local"
+          class="mt-2 flex h-10 w-full rounded-md border border-slate-300 bg-transparent py-2 px-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+      </label>
+      <DatePreset
+        on:clear={() => {
+          etcDateTime = null;
+        }}
+        on:change={(v) => (etcDateTime = dateToPicker(v.detail))}
+      />
     </div>
     <!-- <div>
       <label class="flex items-center space-x-2">
@@ -103,28 +145,29 @@
         </p>
       </label>
     </div> -->
-
-    <div class="flex justify-between">
-      <Button
-        on:click={() => {
-          $updateItemMutation.mutateAsync().then(() => {
-            window.close();
-          });
-        }}>Save & close</Button
-      >
-      <div>
+    <div>
+      <div class="flex mt-8 justify-between">
         <Button
-          variant="subtle"
           on:click={() => {
-            $updateItemMutation.mutate();
-          }}>Save</Button
+            $updateItemMutation.mutateAsync().then(() => {
+              window.close();
+            });
+          }}>Save & close</Button
         >
-        <Button
-          variant="subtle"
-          on:click={() => {
-            window.close();
-          }}>Close</Button
-        >
+        <div>
+          <Button
+            variant="subtle"
+            on:click={() => {
+              $updateItemMutation.mutate();
+            }}>Save</Button
+          >
+          <Button
+            variant="subtle"
+            on:click={() => {
+              window.close();
+            }}>Close</Button
+          >
+        </div>
       </div>
     </div>
   </main>

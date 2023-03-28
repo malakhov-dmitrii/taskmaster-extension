@@ -14,6 +14,7 @@
   $: position = { x: 0, y: 0 };
 
   $: loading = false;
+  $: created = false;
 
   let profile: Profile;
 
@@ -32,6 +33,7 @@
    */
   $: {
     if (selection && selection.toString().length > 0) {
+      created = false;
       open = true;
       selectionText = selection.toString();
     } else {
@@ -116,17 +118,19 @@
       description: text,
       title: `Chat with ${getSecondUserName()} on ${dayjs().format('DD MMM YYYY')}`,
       session: session.id,
+      assigned_to: profile.id,
     };
 
     const res = await pb.collection('tasks').create(newTask);
+    created = true;
 
-    if (res) {
-      window.open(
-        chrome.runtime.getURL(`src/popupEdit/popup.html?editTaskId=${res.id}`),
-        '_blank',
-        'width=450,height=700',
-      );
-    }
+    // if (res) {
+    //   window.open(
+    //     chrome.runtime.getURL(`src/popupEdit/popup.html?editTaskId=${res.id}`),
+    //     '_blank',
+    //     'width=450,height=700',
+    //   );
+    // }
 
     loading = false;
   }
@@ -147,8 +151,11 @@
       selection = document.getSelection();
     });
 
-    document.addEventListener('scroll', () => {
+    const tgMessagesList = document.querySelector('.MessageList');
+    tgMessagesList.addEventListener('scroll', () => {
       selection = null;
+      open = false;
+      created = false;
     });
   });
 </script>
@@ -165,6 +172,8 @@
   >
     {#if loading}
       Loading...
+    {:else if created}
+      Saved!
     {:else}
       Create task from selection
     {/if}
