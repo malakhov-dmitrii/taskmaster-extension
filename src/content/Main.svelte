@@ -5,7 +5,8 @@
   import { onMount } from 'svelte';
   import PocketBase from 'pocketbase';
   import dayjs from 'dayjs';
-  import { cn } from 'src/lib/utils';
+  import { badgeIncrement, cn } from 'src/lib/utils';
+  // import { updateTasksBadge } from 'src/lib/updateTasksBadge';
 
   export const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
 
@@ -138,13 +139,11 @@
     const res = await pb.collection('tasks').create(newTask);
     created = true;
     loading = false;
+
+    chrome.runtime.sendMessage('badgeIncrement');
     setTimeout(() => {
       open = false;
     }, 1000);
-  }
-
-  $: {
-    console.log(floatingMode);
   }
 
   onMount(() => {

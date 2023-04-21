@@ -6,6 +6,7 @@
   import PocketBase from 'pocketbase';
   import EmptyList from 'src/components/EmptyList.svelte';
   import { pick } from 'lodash';
+  import { updateTasksBadge } from 'src/lib/updateTasksBadge';
 
   export const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
 
@@ -39,6 +40,9 @@
     },
     onSettled: () => {
       queryClient.invalidateQueries(['todos', session_id, profile_id]);
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        updateTasksBadge(tabs[0].url);
+      });
     },
   });
 
@@ -108,7 +112,7 @@
 
 {#if $query.isLoading}
   <div>
-    <p class="text-center font-bold animate-pulse my-8">Loading...</p>
+    <p class="text-center font-bold animate-pulse my-8">Loading tasks...</p>
   </div>
 {/if}
 

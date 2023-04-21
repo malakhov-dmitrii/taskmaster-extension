@@ -8,19 +8,18 @@
   import SignIn from 'src/components/SignIn.svelte';
   import ViewItemsList from 'src/components/ViewItemsList.svelte';
   import { onMount } from 'svelte';
-
   import PocketBase from 'pocketbase';
   import EmptyList from 'src/components/EmptyList.svelte';
 
-  export const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
+  const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
 
   export let profile: Profile;
-  let session: Session | null = null;
-  let chat_id: string | null = null;
-  let editTaskId = '';
 
+  $: session = null as Session | null;
+  $: chat_id = '';
+  $: editTaskId = '';
   $: isChat = false;
-  $: loadedTab = false;
+  $: tabReady = false;
   $: loadedSession = false;
 
   const handleGetSession = async (chat_id: string) => {
@@ -28,20 +27,30 @@
       expand: 'users',
       filter: `users.telegram_id="${chat_id}"`,
     });
+
+    console.log('existing session: ', existing);
+
     if (existing.length > 0) {
       session = existing.find((i) => i.users.includes(profile.id));
+      console.log(`picked session: ${session} | ${profile.id} | ${chat_id}`);
+
+      // failed to find session with user
+      // delete existing session and create new one
+      if (!session) {
+        console.log('session not found');
+      }
     } else {
       session = await pb.collection('sessions').create({
         users: [profile.id],
       });
+      console.log('new session: ', session);
     }
     loadedSession = true;
   };
 
   onMount(() => {
-    // if (!profile) return;
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      loadedTab = true;
+      tabReady = true;
       const url = tabs[0].url;
       chat_id = url.split('#')[1];
       if (url.includes('web.telegram.org') && !!chat_id) {
@@ -52,45 +61,40 @@
   });
 </script>
 
-{#if (loadedTab && loadedSession) || (loadedTab && !isChat)}
+<QueryProvider>
   {#if !profile}
     <div class="container px-4 py-4 text-base">
       <SignIn />
     </div>
-  {:else if !isChat && !editTaskId}
+  {:else if !isChat}
     <div class="container px-4 py-4 text-base">
       <SelectChatPlaceholder />
     </div>
   {:else}
-    <QueryProvider>
-      <div class="container py-4 text-base">
-        <PopupHeader session_id={session?.id} on:newTask={(event) => (editTaskId = event.detail)} />
-        {#if editTaskId}
-          <div class="px-4 mt-2">
-            <EditItemView id={editTaskId} on:close={() => (editTaskId = '')} />
-          </div>
-        {:else}
-          <div class="px-4 mt-2">
-            {#if session?.id}
-              <ViewItemsList
-                on:edit={(e) => (editTaskId = e.detail.id)}
-                session_id={session?.id}
-                profile_id={profile?.id}
-              />
-            {:else}
-              <EmptyList />
-              Code: 1
-            {/if}
-          </div>
-        {/if}
-      </div>
-    </QueryProvider>
+    <PopupHeader session_id={session?.id} on:newTask={(event) => (editTaskId = event.detail)} />
+    <div class="container px-4 py-4 text-base">
+      {#if editTaskId}
+        <div class="px-4 mt-2">
+          <EditItemView id={editTaskId} on:close={() => (editTaskId = '')} />
+        </div>
+      {:else}
+        <div class="px-4 mt-2">
+          {#if session?.id}
+            <ViewItemsList
+              on:edit={(e) => (editTaskId = e.detail.id)}
+              session_id={session?.id}
+              profile_id={profile?.id}
+            />
+          {:else}
+            <div>
+              <p class="text-center font-bold animate-pulse my-8">Loading session...</p>
+            </div>
+          {/if}
+        </div>
+      {/if}
+    </div>
   {/if}
-{:else}
-  <div class="w-full h-64 container p-4">
-    <div class="bg-slate-100 animate-pulse" />
-  </div>
-{/if}
+</QueryProvider>
 
 <style>
   .container {

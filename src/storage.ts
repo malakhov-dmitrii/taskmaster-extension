@@ -4,6 +4,7 @@ type IStorage = {
   count?: number;
   session?: Session;
   profile?: Profile;
+  code?: string;
 };
 
 export interface StorageSession {

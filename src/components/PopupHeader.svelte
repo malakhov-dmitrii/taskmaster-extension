@@ -11,18 +11,13 @@
 
   onMount(async () => {
     const store = await chrome.storage.sync.get('floatingMode');
-    console.log(store);
-
     floatingMode = store.floatingMode;
   });
 
-  $: {
-    console.log(floatingMode);
-  }
   const dispatch = createEventDispatcher();
 </script>
 
-<div class="px-4 border-b border-slate-300 pb-4 flex items-center justify-between">
+<div class="px-4 border-b border-slate-300 py-4 flex items-center justify-between">
   <div class="flex space-x-2">
     <Button
       variant="subtle"

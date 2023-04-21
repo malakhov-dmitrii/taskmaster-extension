@@ -11,3 +11,16 @@ import { twMerge } from 'tailwind-merge';
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export const badgeIncrement = async () => {
+  chrome.runtime.sendMessage('badgeIncrement');
+  // const tab = await chrome.tabs.query({ active: true, currentWindow: true });
+  // const tabId = tab[0].id;
+
+  // chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+  //   console.log({ tabs });
+  // });
+
+  // const text = await chrome.action.getBadgeText({});
+  // console.log({ text });
+};

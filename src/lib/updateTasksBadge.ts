@@ -10,10 +10,7 @@ export const updateTasksBadge = async (url: string) => {
       const codeRecord = await pb.collection('verification_codes').getOne(code);
       if (!codeRecord) {
         console.log('No code record found: updateTasksBadge');
-
         throw new Error('no code: updateTasksBadge');
-
-        return;
       }
       const profile = await pb.collection('profiles').getOne(codeRecord.user);
 
@@ -31,10 +28,10 @@ export const updateTasksBadge = async (url: string) => {
 
           chrome.action.setBadgeText({ text: tasks.length.toString() });
         } else {
-          chrome.action.setBadgeText({ text: '' });
+          chrome.action.setBadgeText({ text: '0' });
         }
       } else {
-        chrome.action.setBadgeText({ text: '' });
+        chrome.action.setBadgeText({ text: '🤔' });
       }
     }
   }
