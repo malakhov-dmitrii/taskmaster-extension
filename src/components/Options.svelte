@@ -17,14 +17,7 @@
   export let profile: Profile;
   let session: Session | null = null;
   let chat_id: string | null = null;
-
-  let params = location.search
-    .replaceAll('?', '')
-    .split('&')
-    .map((i) => {
-      const [key, v] = i.split('=');
-      return { [key]: v };
-    });
+  let editTaskId = '';
 
   $: isChat = false;
   $: loadedTab = false;
@@ -57,8 +50,6 @@
       }
     });
   });
-
-  const editTaskId = params.find((i) => i.editTaskId)?.editTaskId;
 </script>
 
 {#if (loadedTab && loadedSession) || (loadedTab && !isChat)}
@@ -73,15 +64,19 @@
   {:else}
     <QueryProvider>
       <div class="container py-4 text-base">
-        <PopupHeader {chat_id} session_id={session?.id} />
+        <PopupHeader session_id={session?.id} on:newTask={(event) => (editTaskId = event.detail)} />
         {#if editTaskId}
           <div class="px-4 mt-2">
-            <EditItemView id={editTaskId} />
+            <EditItemView id={editTaskId} on:close={() => (editTaskId = '')} />
           </div>
         {:else}
           <div class="px-4 mt-2">
             {#if session?.id}
-              <ViewItemsList session_id={session?.id} profile_id={profile?.id} />
+              <ViewItemsList
+                on:edit={(e) => (editTaskId = e.detail.id)}
+                session_id={session?.id}
+                profile_id={profile?.id}
+              />
             {:else}
               <EmptyList />
               Code: 1
@@ -93,7 +88,7 @@
   {/if}
 {:else}
   <div class="w-full h-64 container p-4">
-    <div class="bg-slate-100 animate-pulse " />
+    <div class="bg-slate-100 animate-pulse" />
   </div>
 {/if}
 

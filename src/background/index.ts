@@ -17,3 +17,13 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
     await updateTasksBadge(tab.url);
   });
 });
+
+chrome.runtime.onInstalled.addListener(function (object) {
+  // let internalUrl = chrome.runtime.getURL('src/user/onboarding.html');
+
+  if (object.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+    chrome.tabs.create({ url: 'https://pa-task-tracker.super.site/' });
+  }
+});
+
+chrome.runtime.setUninstallURL('https://pa-task-tracker.super.site/were-sorry');

@@ -15,11 +15,4 @@ export default defineConfig({
       src: srcDir,
     },
   },
-  build: {
-    rollupOptions: {
-      input: {
-        welcome: 'src/popupEdit/popup.html',
-      },
-    },
-  },
 });

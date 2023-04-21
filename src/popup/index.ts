@@ -28,21 +28,18 @@ async function render() {
         return null;
       });
 
+    console.log({ code });
+
+    if (!code) {
+      console.log('no code: popup -> index.ts ');
+      throw new Error('no code: popup -> index.ts');
+      return;
+    }
+
     console.log({ user: code.user });
     if (code.user) profile = await pb.collection('profiles').getOne(code.user);
   }
 
-  console.log({ profile });
-
-  // profile = await pb
-  //   .collection('profiles')
-  //   .getOne<Profile>(profile.id)
-  //   .catch(async () => {
-  //     console.log('error');
-  //     await chrome.storage.sync.clear();
-  //     window.location.reload();
-  //     return null;
-  //   });
   target.innerHTML = '';
   new Options({ target, props: { profile } });
 }

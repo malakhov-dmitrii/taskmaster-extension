@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { fade, slide } from 'svelte/transition';
   import type { CreateTaskDTO, Profile, Session, SessionWithUser, Task } from 'src/lib/types';
   // import { updateTasksBadge } from 'src/lib/updateTasksBadge';
   import { onMount } from 'svelte';
   import PocketBase from 'pocketbase';
   import dayjs from 'dayjs';
+  import { cn } from 'src/lib/utils';
 
   export const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
 
@@ -11,7 +13,8 @@
   $: selection = null as Selection | null;
   $: selectionText = '';
   $: selectionNodeRect = selection?.focusNode?.parentElement?.getBoundingClientRect();
-  $: position = { x: 0, y: 0 };
+  $: floatingMode = 'off';
+  $: position = { x: 'unset', y: 'unset', right: '16px', bottom: '100px' };
 
   $: loading = false;
   $: created = false;
@@ -21,7 +24,16 @@
   onMount(async () => {
     const storage = await chrome.storage.sync.get();
     const code = await pb.collection('verification_codes').getOne(storage.code);
+
+    if (!code) {
+      console.log("Code doesn't exist: Main -> onMount");
+
+      throw new Error('no code: Main -> onMount');
+      return;
+    }
     profile = await pb.collection('profiles').getOne(code.user);
+
+    floatingMode = storage.floatingMode || 'on';
   });
 
   $: {
@@ -34,8 +46,10 @@
   $: {
     if (selection && selection.toString().length > 0) {
       created = false;
-      open = true;
       selectionText = selection.toString();
+      setTimeout(() => {
+        open = true;
+      }, 200);
     } else {
       setTimeout(() => {
         open = false;
@@ -123,31 +137,33 @@
 
     const res = await pb.collection('tasks').create(newTask);
     created = true;
-
-    // if (res) {
-    //   window.open(
-    //     chrome.runtime.getURL(`src/popupEdit/popup.html?editTaskId=${res.id}`),
-    //     '_blank',
-    //     'width=450,height=700',
-    //   );
-    // }
-
     loading = false;
+    setTimeout(() => {
+      open = false;
+    }, 1000);
+  }
+
+  $: {
+    console.log(floatingMode);
   }
 
   onMount(() => {
-    console.log('onMount');
+    document.onmouseup = async () => {
+      const store = await chrome.storage.sync.get('floatingMode');
+      floatingMode = store.floatingMode || 'on';
 
-    document.onmouseup = () => {
-      console.log('onmouseup');
-      console.log(selection?.toString());
-      position = {
-        x: selectionNodeRect?.left ?? 0,
-        y: selectionNodeRect?.top ?? 0,
-      };
+      if (floatingMode === 'on') {
+        const x = selectionNodeRect?.left || document.body.clientWidth - 300;
+        const y = selectionNodeRect?.top - 40 || document.body.clientHeight - 120;
+        // @ts-ignore
+        position = {
+          x: `${x}px`,
+          y: `${y}px`,
+        };
+      }
     };
     document.addEventListener('selectionchange', () => {
-      console.log('selectionchange');
+      // console.log('selectionchange');
       selection = document.getSelection();
     });
 
@@ -163,8 +179,10 @@
 {#if open && profile}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
-    class="create-task-btn"
-    style="left: {position.x}px; top: {position.y}px;"
+    in:slide={{ duration: 200 }}
+    out:fade={{ duration: 200 }}
+    class={cn('create-task-btn')}
+    style="left: {position.x}; top: {position.y};"
     on:click={() => {
       if (loading) return;
       createTask(selectionText, window.location.href);

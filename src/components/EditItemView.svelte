@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { useMutation } from '@sveltestack/svelte-query';
+  import { useMutation, useQueryClient } from '@sveltestack/svelte-query';
   import { pb, supabase } from 'src/lib/db';
   import type { SupabaseTodo, Task, TodoItemResponsePromise } from 'src/lib/types';
-  import { onMount } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import dayjs from 'dayjs';
   import utc from 'dayjs/plugin/utc';
   import timezone from 'dayjs/plugin/timezone';
@@ -17,6 +17,8 @@
   let dateTime = null;
   let etcDateTime = null;
   let loading = true;
+
+  const dispatch = createEventDispatcher();
 
   const dateToPicker = (date: string | dayjs.Dayjs) => dayjs(date).toISOString().slice(0, 19).replace('T', ' ');
 
@@ -35,6 +37,7 @@
       const etcDateTimeN = etcDateTime ? dayjs.tz(etcDateTime, 'Etc/UTC') : null;
       console.log({ data });
 
+      loading = true;
       return Promise.resolve(
         pb.collection('tasks').update(id, {
           title: data.title,
@@ -46,9 +49,7 @@
       );
     },
     {
-      onMutate: () => {
-        loading = true;
-      },
+      onError: (err, newTodo, context) => {},
       onSuccess: (res) => {
         data = res.data;
       },
@@ -69,7 +70,7 @@
 {:else}
   <main class="space-y-4">
     <h1 class="text-2xl font-medium">Edit item</h1>
-    <div>
+    <!-- <div>
       <label>
         <p class="font-medium text-sm">Title</p>
         <input
@@ -78,7 +79,7 @@
           class="mt-2 flex h-10 w-full rounded-md border border-slate-300 bg-transparent py-2 px-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </label>
-    </div>
+    </div> -->
     <div>
       <label>
         <p class="font-medium text-sm">Description</p>
@@ -164,7 +165,7 @@
           <Button
             variant="subtle"
             on:click={() => {
-              window.close();
+              dispatch('close');
             }}>Close</Button
           >
         </div>

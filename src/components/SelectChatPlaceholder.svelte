@@ -14,6 +14,14 @@
     const code = s.code;
 
     const codeRecord = await pb.collection('verification_codes').getOne(code);
+
+    if (!codeRecord) {
+      console.log("Code doesn't exist: SelectChatPlaceholder -> onMount");
+      throw new Error("Code doesn't exist: SelectChatPlaceholder -> onMount");
+
+      return;
+    }
+
     const profileRecord = await pb.collection('profiles').getOne(codeRecord.user);
     profile = profileRecord.id;
     sessions = await pb.collection('sessions').getFullList<Session>({

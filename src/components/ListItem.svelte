@@ -15,9 +15,7 @@
   export let profile_id: string;
   const dispatch = createEventDispatcher();
 
-  let assignedToMe = todo.assigned_to === profile_id || !todo.assigned_to;
-
-  console.log(todo);
+  $: assignedToMe = todo.assigned_to === profile_id || !todo.assigned_to;
 </script>
 
 <div
@@ -47,12 +45,7 @@
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div
       on:click={() => {
-        chrome.windows.create({
-          url: chrome.runtime.getURL(`src/popupEdit/popup.html?editTaskId=${todo.id}`),
-          type: 'popup',
-          width: 500,
-          height: 700,
-        });
+        dispatch('edit', todo);
       }}
     >
       <p class="text-sm mt-1 line-clamp-2 cursor-pointer">
@@ -91,7 +84,7 @@
       size="xs"
       on:click={() => {
         dispatch('toggleAssignee');
-        todo.assigned_to = assignedToMe ? 'any' : profile_id;
+        // todo.assigned_to = assignedToMe ? 'any' : profile_id;
       }}
     >
       {#if assignedToMe}

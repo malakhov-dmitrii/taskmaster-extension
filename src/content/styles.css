@@ -5,22 +5,9 @@
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     user-select: none;
-    /* background-color: #4a5568;
-    text-align: center;
-    color: #fff;
-    border-radius: 9999px;
-    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    z-index: 10;
-    padding: 0.2rem 1rem;
-    font-weight: 500;
-    border: 2px solid #fff;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    font-size: 0.8rem;
-    line-height: 0.5rem;
-    transition: all 0.2s ease-in-out;
-user-select: none; */
+    right: 16px;
+    bottom: 100px;
+    width: fit-content;
 
     min-width: min-content;
     display: inline-flex;

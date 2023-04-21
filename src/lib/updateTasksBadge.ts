@@ -8,6 +8,13 @@ export const updateTasksBadge = async (url: string) => {
   if (url.includes('web.telegram.org')) {
     if (code) {
       const codeRecord = await pb.collection('verification_codes').getOne(code);
+      if (!codeRecord) {
+        console.log('No code record found: updateTasksBadge');
+
+        throw new Error('no code: updateTasksBadge');
+
+        return;
+      }
       const profile = await pb.collection('profiles').getOne(codeRecord.user);
 
       const chat_id = url.split('#')[1];
