@@ -1,4 +1,5 @@
 import { pb } from 'src/lib/db';
+import { getOrCreateSession } from 'src/lib/session';
 import type { SessionWithUser, Task } from 'src/lib/types';
 
 export const updateTasksBadge = async (url: string) => {
@@ -16,11 +17,7 @@ export const updateTasksBadge = async (url: string) => {
 
       const chat_id = url.split('#')[1];
       if (chat_id) {
-        const existing = await pb.collection('sessions').getFullList<SessionWithUser>({
-          filter: `users.telegram_id="${chat_id}"`,
-        });
-
-        const session = existing.find((s) => s.users.includes(profile.id));
+        const session = await getOrCreateSession(chat_id, profile.telegram_id, profile.id, true);
         if (session) {
           const tasks = await pb.collection('tasks').getFullList<Task>({
             filter: `session.id="${session.id}"`,

@@ -10,6 +10,7 @@
   import { onMount } from 'svelte';
   import PocketBase from 'pocketbase';
   import EmptyList from 'src/components/EmptyList.svelte';
+  import { getOrCreateSession } from 'src/lib/session';
 
   const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
 
@@ -20,32 +21,17 @@
   $: editTaskId = '';
   $: isChat = false;
   $: tabReady = false;
-  $: loadedSession = false;
+  $: sessionLoadingState = 'idle' as 'idle' | 'loading' | 'error' | 'success';
 
   const handleGetSession = async (chat_id: string) => {
-    const existing = await pb.collection('sessions').getFullList<SessionWithUser>({
-      expand: 'users',
-      filter: `users.telegram_id="${chat_id}"`,
+    console.log('handleGetSession', chat_id);
+
+    sessionLoadingState = 'loading';
+    session = await getOrCreateSession(chat_id, profile.telegram_id, profile.id).catch(() => {
+      sessionLoadingState = 'error';
+      return null;
     });
-
-    console.log('existing session: ', existing);
-
-    if (existing.length > 0) {
-      session = existing.find((i) => i.users.includes(profile.id));
-      console.log(`picked session: ${session} | ${profile.id} | ${chat_id}`);
-
-      // failed to find session with user
-      // delete existing session and create new one
-      if (!session) {
-        console.log('session not found');
-      }
-    } else {
-      session = await pb.collection('sessions').create({
-        users: [profile.id],
-      });
-      console.log('new session: ', session);
-    }
-    loadedSession = true;
+    sessionLoadingState = 'success';
   };
 
   onMount(() => {
@@ -59,6 +45,16 @@
       }
     });
   });
+
+  // $: {
+  //   console.log({
+  //     profile,
+  //     chat_id,
+  //     isChat,
+  //     sessionLoadingState,
+  //     session,
+  //   });
+  // }
 </script>
 
 <QueryProvider>
@@ -71,7 +67,7 @@
       <SelectChatPlaceholder />
     </div>
   {:else}
-    <PopupHeader session_id={session?.id} on:newTask={(event) => (editTaskId = event.detail)} />
+    <PopupHeader user_id={profile.id} {session} on:newTask={(event) => (editTaskId = event.detail)} />
     <div class="container px-4 py-4 text-base">
       {#if editTaskId}
         <div class="px-4 mt-2">
@@ -85,9 +81,13 @@
               session_id={session?.id}
               profile_id={profile?.id}
             />
-          {:else}
+          {:else if sessionLoadingState === 'loading'}
             <div>
               <p class="text-center font-bold animate-pulse my-8">Loading session...</p>
+            </div>
+          {:else if sessionLoadingState === 'error'}
+            <div>
+              <p class="text-center font-bold animate-pulse my-8">Error loading session</p>
             </div>
           {/if}
         </div>

@@ -6,8 +6,6 @@
   import PocketBase from 'pocketbase';
   import dayjs from 'dayjs';
   import { badgeIncrement, cn } from 'src/lib/utils';
-  // import { updateTasksBadge } from 'src/lib/updateTasksBadge';
-
   export const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
 
   let open = false;
@@ -58,40 +56,6 @@
     }
   }
 
-  /**
-   * Get session for opened chat and active user
-   * If there is no session, create one
-   */
-  const handleGetSession = async (): Promise<Session> => {
-    const chat_id = location.href.split('#')[1];
-
-    const existing = await pb.collection('sessions').getFullList<SessionWithUser>({
-      expand: 'users',
-      filter: `users.telegram_id="${chat_id}"`,
-    });
-    if (existing.length > 0) {
-      console.log({ existing });
-
-      const session = existing.find((i) => i.users?.includes(profile.id));
-
-      if (session) {
-        return session;
-      }
-
-      const res = await pb.collection('sessions').create<Session>({
-        users: [profile.id],
-      });
-
-      return res;
-    } else {
-      const res = await pb.collection('sessions').create<Session>({
-        users: [profile.id],
-      });
-
-      return res;
-    }
-  };
-
   const handleGetSecondUser = async (telegram_id: string) => {
     const users = await pb.collection('profiles').getFullList({
       filter: `telegram_id="${telegram_id}"`,
@@ -101,39 +65,84 @@
 
     const newUser = await pb.collection('profiles').create({
       telegram_id,
-      name: getSecondUserName(),
+      full_name: getSecondUserName(),
     });
 
     return newUser;
   };
 
-  const ensureSecondUserInSession = async (session: Session, telegram_id: string) => {
-    console.log('session', session);
+  // const ensureSecondUserInSession = async (session: Session, telegram_id: string) => {
+  //   console.log('session', session);
 
-    const secondUser = await handleGetSecondUser(telegram_id);
+  //   const secondUser = await handleGetSecondUser(telegram_id);
 
-    if (session.users?.includes(secondUser.id)) return;
+  //   if (session.users?.includes(secondUser.id)) return;
 
-    await pb.collection('sessions').update(session.id, {
-      users: [...(session?.users ?? []), secondUser.id],
-    });
-  };
+  //   await pb.collection('sessions').update(session.id, {
+  //     users: [...(session?.users ?? []), secondUser.id],
+  //   });
+  // };
 
   function getSecondUserName() {
-    return document.querySelector('.messages-layout .fullName')?.textContent;
+    return document.querySelector('.messages-layout .fullName')?.textContent ?? '';
   }
 
+  const getOrCreateSession = async (
+    chat_id: string,
+    profile_telegram_id: string,
+    profile_id: string,
+    omit_create = false,
+  ): Promise<Session> => {
+    const userMe = await pb.collection('profiles').getOne(profile_id);
+    let companionUser = await pb
+      .collection('profiles')
+      .getFirstListItem(`telegram_id="${chat_id}"`)
+      .catch(() => null);
+
+    if (!companionUser) {
+      companionUser = await pb.collection('profiles').create({
+        telegram_id: chat_id,
+      });
+    }
+
+    let session;
+    const mySessions = await pb.collection('sessions').getFullList<SessionWithUser>({
+      expand: 'users',
+      filter: `users.telegram_id="${userMe.telegram_id}"`,
+      sort: '-created',
+    });
+
+    console.log('my sessions: ', mySessions);
+    console.log(
+      'match with companionUser id: ',
+      mySessions.filter((i) => i.expand.users.find((j) => j.telegram_id === chat_id)),
+    );
+
+    session = mySessions.find((i) => i.expand.users.find((j) => j.telegram_id === chat_id));
+    if (!session && !omit_create) {
+      session = await pb.collection('sessions').create({
+        users: [userMe.id, companionUser.id],
+      });
+      console.log('new session: ', session);
+    }
+
+    return session;
+  };
+
   async function createTask(text: string, url: string) {
+    const chat_id = location.href.split('#')[1];
     loading = true;
 
-    const session = await handleGetSession();
-    await ensureSecondUserInSession(session, location.href.split('#')[1]);
+    const session = await getOrCreateSession(chat_id, profile.telegram_id, profile.id);
+
+    // await ensureSecondUserInSession(session, chat_id);
+    const companionId = session?.users?.find((i) => i !== profile.id);
 
     const newTask: CreateTaskDTO = {
       description: text,
       title: `Chat with ${getSecondUserName()} on ${dayjs().format('DD MMM YYYY')}`,
       session: session.id,
-      assigned_to: profile.id,
+      assigned_to: companionId,
     };
 
     const res = await pb.collection('tasks').create(newTask);

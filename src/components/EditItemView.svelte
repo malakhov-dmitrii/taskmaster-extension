@@ -8,6 +8,7 @@
   import timezone from 'dayjs/plugin/timezone';
   import Button from 'src/ui/Button.svelte';
   import DatePreset from 'src/components/DatePreset.svelte';
+  import { updateTasksBadge } from 'src/lib/updateTasksBadge';
 
   dayjs.extend(utc);
   dayjs.extend(timezone);
@@ -69,17 +70,19 @@
   <p class="text-center font-bold animate-pulse">Loading...</p>
 {:else}
   <main class="space-y-4">
-    <h1 class="text-2xl font-medium">Edit item</h1>
-    <!-- <div>
-      <label>
-        <p class="font-medium text-sm">Title</p>
-        <input
-          bind:value={data.title}
-          type="text"
-          class="mt-2 flex h-10 w-full rounded-md border border-slate-300 bg-transparent py-2 px-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-      </label>
-    </div> -->
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-medium">Edit item</h1>
+      <Button
+        variant="outline"
+        size="sm"
+        on:click={() => {
+          $updateItemMutation.mutateAsync().then(async () => {
+            await updateTasksBadge(window.location.href);
+            window.close();
+          });
+        }}>Save & close</Button
+      >
+    </div>
     <div>
       <label>
         <p class="font-medium text-sm">Description</p>
@@ -150,7 +153,8 @@
       <div class="flex mt-8 justify-between">
         <Button
           on:click={() => {
-            $updateItemMutation.mutateAsync().then(() => {
+            $updateItemMutation.mutateAsync().then(async () => {
+              await updateTasksBadge(window.location.href);
               window.close();
             });
           }}>Save & close</Button
@@ -160,6 +164,7 @@
             variant="subtle"
             on:click={() => {
               $updateItemMutation.mutate();
+              updateTasksBadge(window.location.href);
             }}>Save</Button
           >
           <Button

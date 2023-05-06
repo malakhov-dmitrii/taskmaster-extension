@@ -2,12 +2,15 @@
   import Button from '../ui/Button.svelte';
   import { useQueryClient } from '@sveltestack/svelte-query';
   import { pb } from 'src/lib/db';
+  import type { Session } from 'src/lib/types';
   import { storage } from 'src/storage';
   import { createEventDispatcher, onMount } from 'svelte';
   let queryClient = useQueryClient();
 
-  export let session_id: string;
+  export let session = null as Session | null;
+  export let user_id: string;
   $: floatingMode = 'on';
+  $: companionId = session?.users?.find((u) => u !== user_id);
 
   onMount(async () => {
     const store = await chrome.storage.sync.get('floatingMode');
@@ -56,11 +59,12 @@
 
   <Button
     size="sm"
-    disabled={!session_id}
+    disabled={!session}
     on:click={async () => {
       const res = await pb.collection('tasks').create({
-        session: session_id,
+        session: session.id,
         title: 'New Task',
+        assigned_to: companionId,
       });
       dispatch('newTask', res.id);
     }}>New Task</Button

@@ -16,6 +16,9 @@
   const dispatch = createEventDispatcher();
 
   $: assignedToMe = todo.assigned_to === profile_id || !todo.assigned_to;
+  $: {
+    console.log({ assignedToMe, todo, profile_id });
+  }
 </script>
 
 <div

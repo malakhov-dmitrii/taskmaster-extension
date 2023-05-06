@@ -18,8 +18,6 @@
     if (!codeRecord) {
       console.log("Code doesn't exist: SelectChatPlaceholder -> onMount");
       throw new Error("Code doesn't exist: SelectChatPlaceholder -> onMount");
-
-      return;
     }
 
     const profileRecord = await pb.collection('profiles').getOne(codeRecord.user);
@@ -28,16 +26,13 @@
       expand: 'users',
       filter: `users.id="${profileRecord.id}"`,
     });
+    sessions = sessions.filter((i) => i.users.length > 1);
     const tasks = await pb.collection('tasks').getFullList<Task>({
       filter: `session.users.id="${profileRecord.id}"`,
     });
 
     tasksCount = tasks.reduce((acc, task) => {
-      if (acc[task.session]) {
-        acc[task.session] += 1;
-      } else {
-        acc[task.session] = 1;
-      }
+      acc[task.session] = (acc[task.session] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
   });
@@ -68,13 +63,14 @@
             .filter((i) => !!tasksCount[i.id])
             .reverse() as session}
             {@const user = session.expand.users.find((i) => i.id !== profile)}
+            {console.log(user, session.expand.users)}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-missing-attribute -->
             <a
               class="cursor-pointer hover:underline"
-              on:click={() => chrome.tabs.create({ url: `https://web.telegram.org/z/#${user.telegram_id}` })}
+              on:click={() => chrome.tabs.create({ url: `https://web.telegram.org/z/#${user?.telegram_id}` })}
             >
-              {user?.full_name || user.username || `ID: ${user.telegram_id}` || '<name_unset>'} ({tasksCount[
+              {user?.full_name || user?.username || `ID: ${user?.telegram_id}` || '<name_unset>'} ({tasksCount[
                 session.id
               ] || 0})
             </a>

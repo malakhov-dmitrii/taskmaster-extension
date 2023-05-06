@@ -19,7 +19,9 @@
     console.log('query');
 
     return Promise.resolve(
-      pb.collection('tasks').getFullList<Task>({ filter: `session.id="${session_id}"`, expand: 'session' }),
+      pb
+        .collection('tasks')
+        .getFullList<Task>({ filter: `session.id="${session_id}"`, expand: 'session', sort: '-created' }),
     );
   });
 

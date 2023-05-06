@@ -33,3 +33,5 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     });
   }
 });
+
+console.log('background script loaded');
