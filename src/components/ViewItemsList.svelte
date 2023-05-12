@@ -16,8 +16,6 @@
   const queryClient = useQueryClient();
 
   const query = useQuery(['todos', session_id, profile_id], async () => {
-    console.log('query');
-
     return Promise.resolve(
       pb
         .collection('tasks')
@@ -30,8 +28,6 @@
       await queryClient.cancelQueries(['todos', session_id, profile_id]);
       const previousTodos = queryClient.getQueryData<Task[]>(['todos', session_id, profile_id]);
       queryClient.setQueryData(['todos', session_id, profile_id], (old: Task[]) => {
-        console.log({ previousTodos });
-
         return (old ?? previousTodos)?.filter((i) => i.id !== id);
       });
 
@@ -77,26 +73,6 @@
   };
 
   const toggleAssignMutation = useMutation(handleToggleMutation, {
-    // onMutate: async (id) => {
-    //   await queryClient.cancelQueries(['todos', session_id, profile_id]);
-    //   const previousTodos = queryClient.getQueryData<Task[]>(['todos', session_id, profile_id]);
-    //   const task = previousTodos.find((i) => i.id === id);
-    //   const secondUserId = task.expand.session?.users.find((i) => i !== profile_id);
-
-    //   console.log({ task, secondUserId });
-
-    //   queryClient.setQueryData(['todos', session_id, profile_id], (old: Task[]) => {
-    //     return (old ?? previousTodos)?.map((i) => {
-    //       if (i.id === id) {
-    //         return { ...i, assigned_to: i.assigned_to === profile_id ? secondUserId : profile_id };
-    //       }
-
-    //       return i;
-    //     });
-    //   });
-
-    //   return { previousTodos };
-    // },
     onError: (err, newTodo, context) => {
       queryClient.setQueryData(['todos', session_id, profile_id], context.previousTodos);
     },
@@ -114,7 +90,7 @@
 
 {#if $query.isLoading}
   <div>
-    <p class="text-center font-bold animate-pulse my-8">Loading tasks...</p>
+    <p class="text-center font-bold text-xl animate-pulse my-8">Loading tasks list...</p>
   </div>
 {/if}
 

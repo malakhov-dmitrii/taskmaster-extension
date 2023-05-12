@@ -8,11 +8,22 @@ import WindiCSS from 'vite-plugin-windicss';
 const srcDir = resolve(__dirname, 'src');
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [svelte(), crx({ manifest }), WindiCSS()],
-  resolve: {
-    alias: {
-      src: srcDir,
+export default defineConfig((env) => {
+  return {
+    plugins: [
+      svelte(),
+      crx({
+        manifest: {
+          ...manifest,
+          name: `${manifest.name} ${env.mode === 'development' ? ' | [DEV]' : ''}`,
+        },
+      }),
+      WindiCSS(),
+    ],
+    resolve: {
+      alias: {
+        src: srcDir,
+      },
     },
-  },
+  };
 });

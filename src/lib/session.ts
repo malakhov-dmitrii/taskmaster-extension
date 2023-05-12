@@ -5,10 +5,12 @@ const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
 
 export const getOrCreateSession = async (
   chat_id: string,
-  profile_telegram_id: string,
   profile_id: string,
   omit_create = false,
 ): Promise<Session> => {
+  const store = await chrome.storage.sync.get(chat_id);
+  if (store[chat_id]) return store[chat_id];
+
   const userMe = await pb.collection('profiles').getOne(profile_id);
   let companionUser = await pb
     .collection('profiles')
@@ -46,5 +48,6 @@ export const getOrCreateSession = async (
     console.log('new session: ', session);
   }
 
+  await chrome.storage.sync.set({ [chat_id]: session });
   return session;
 };

@@ -14,21 +14,19 @@
   });
 </script>
 
-<div class=" space-y-4 px-4 text-base">
-  <div class="flex justify-between items-center">
+<div class="space-y-4 container px-4 py-8">
+  <div class="flex justify-center items-center">
     <h1 class="font-bold text-2xl">Sign Up</h1>
   </div>
 
-  <div class="flex justify-between">
-    <Button disabled={!code} on:click={() => window.open(`${bot_url}?start=${code}`)}>Sign In with Telegram</Button>
-    <Button
-      variant="ghost"
-      on:click={() => {
-        chrome.storage.sync.clear();
-        window.location.reload();
-      }}
-    >
-      Clear cache
-    </Button>
+  <div class="flex justify-center">
+    <Button disabled={!code} on:click={() => window.open(`${bot_url}?start=${code}`)}>Sign up with Telegram</Button>
   </div>
 </div>
+
+<style>
+  /* .container {
+    max-width: 300px;
+    min-width: 300px;
+  } */
+</style>

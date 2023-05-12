@@ -22,17 +22,24 @@
 
   onMount(async () => {
     const storage = await chrome.storage.sync.get();
+    floatingMode = storage.floatingMode || 'on';
+
+    const key = `profile_for_code/${storage.code}`;
+    if (storage[key]) {
+      console.log('profile from storage: ', storage[key]);
+
+      profile = storage[key];
+      return;
+    }
+
     const code = await pb.collection('verification_codes').getOne(storage.code);
 
     if (!code) {
       console.log("Code doesn't exist: Main -> onMount");
 
       throw new Error('no code: Main -> onMount');
-      return;
     }
     profile = await pb.collection('profiles').getOne(code.user);
-
-    floatingMode = storage.floatingMode || 'on';
   });
 
   $: {
@@ -46,6 +53,7 @@
     if (selection && selection.toString().length > 0) {
       created = false;
       selectionText = selection.toString();
+      console.log('selection: ', selectionText, profile);
       setTimeout(() => {
         open = true;
       }, 200);
@@ -56,43 +64,19 @@
     }
   }
 
-  const handleGetSecondUser = async (telegram_id: string) => {
-    const users = await pb.collection('profiles').getFullList({
-      filter: `telegram_id="${telegram_id}"`,
-    });
-
-    if (users.length > 0) return users[0];
-
-    const newUser = await pb.collection('profiles').create({
-      telegram_id,
-      full_name: getSecondUserName(),
-    });
-
-    return newUser;
-  };
-
-  // const ensureSecondUserInSession = async (session: Session, telegram_id: string) => {
-  //   console.log('session', session);
-
-  //   const secondUser = await handleGetSecondUser(telegram_id);
-
-  //   if (session.users?.includes(secondUser.id)) return;
-
-  //   await pb.collection('sessions').update(session.id, {
-  //     users: [...(session?.users ?? []), secondUser.id],
-  //   });
-  // };
-
   function getSecondUserName() {
     return document.querySelector('.messages-layout .fullName')?.textContent ?? '';
   }
 
-  const getOrCreateSession = async (
-    chat_id: string,
-    profile_telegram_id: string,
-    profile_id: string,
-    omit_create = false,
-  ): Promise<Session> => {
+  const getOrCreateSession = async (chat_id: string, profile_id: string, omit_create = false): Promise<Session> => {
+    const store = await chrome.storage.sync.get(chat_id);
+    if (store[chat_id]) {
+      console.log('session from storage: ', store[chat_id]);
+      return store[chat_id];
+    }
+
+    console.log('session from db');
+
     const userMe = await pb.collection('profiles').getOne(profile_id);
     let companionUser = await pb
       .collection('profiles')
@@ -133,7 +117,7 @@
     const chat_id = location.href.split('#')[1];
     loading = true;
 
-    const session = await getOrCreateSession(chat_id, profile.telegram_id, profile.id);
+    const session = await getOrCreateSession(chat_id, profile.id);
 
     // await ensureSecondUserInSession(session, chat_id);
     const companionId = session?.users?.find((i) => i !== profile.id);

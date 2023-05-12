@@ -1,49 +1,33 @@
 <script lang="ts">
-  import type { Profile, Session, SessionWithUser } from 'src/lib/types';
-  import { useQuery } from '@sveltestack/svelte-query';
+  import type { Profile, Session } from 'src/lib/types';
   import EditItemView from 'src/components/EditItemView.svelte';
-  import PopupHeader from 'src/components/PopupHeader.svelte';
+  import PopupHeader from 'src/components/header/PopupHeader.svelte';
   import QueryProvider from 'src/components/QueryProvider.svelte';
   import SelectChatPlaceholder from 'src/components/SelectChatPlaceholder.svelte';
-  import SignIn from 'src/components/SignIn.svelte';
   import ViewItemsList from 'src/components/ViewItemsList.svelte';
   import { onMount } from 'svelte';
-  import PocketBase from 'pocketbase';
-  import EmptyList from 'src/components/EmptyList.svelte';
   import { getOrCreateSession } from 'src/lib/session';
-
-  const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
+  import ClearCache from 'src/components/ClearCache.svelte';
 
   export let profile: Profile;
 
-  $: session = null as Session | null;
+  $: sessionPromise = null as Promise<Session | null>;
   $: chat_id = '';
   $: editTaskId = '';
   $: isChat = false;
-  $: tabReady = false;
-  $: sessionLoadingState = 'idle' as 'idle' | 'loading' | 'error' | 'success';
 
-  const handleGetSession = async (chat_id: string) => {
-    console.log('handleGetSession', chat_id);
+  async function loadSession() {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const url = tabs[0].url;
+    chat_id = url.split('#')[1];
 
-    sessionLoadingState = 'loading';
-    session = await getOrCreateSession(chat_id, profile.telegram_id, profile.id).catch(() => {
-      sessionLoadingState = 'error';
-      return null;
-    });
-    sessionLoadingState = 'success';
-  };
+    isChat = url.includes('web.telegram.org') && !!chat_id;
+    if (!isChat) return null;
+    return getOrCreateSession(chat_id, profile.id);
+  }
 
   onMount(() => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      tabReady = true;
-      const url = tabs[0].url;
-      chat_id = url.split('#')[1];
-      if (url.includes('web.telegram.org') && !!chat_id) {
-        isChat = true;
-        if (profile) handleGetSession(chat_id);
-      }
-    });
+    sessionPromise = loadSession();
   });
 
   // $: {
@@ -58,47 +42,49 @@
 </script>
 
 <QueryProvider>
-  {#if !profile}
-    <div class="container px-4 py-4 text-base">
-      <SignIn />
-    </div>
-  {:else if !isChat}
+  <!-- When no chat is opened -->
+  {#if !isChat}
     <div class="container px-4 py-4 text-base">
       <SelectChatPlaceholder />
     </div>
-  {:else}
-    <PopupHeader user_id={profile.id} {session} on:newTask={(event) => (editTaskId = event.detail)} />
-    <div class="container px-4 py-4 text-base">
-      {#if editTaskId}
-        <div class="px-4 mt-2">
-          <EditItemView id={editTaskId} on:close={() => (editTaskId = '')} />
-        </div>
-      {:else}
-        <div class="px-4 mt-2">
-          {#if session?.id}
+  {/if}
+  <!--  -->
+
+  <!-- Chat opened -->
+  {#if isChat}
+    <!-- Load chat info -->
+    {#await sessionPromise}
+      <div class="container px-4 text-base">
+        <p class="text-center font-bold text-xl animate-pulse my-8">Loading...</p>
+      </div>
+      <!-- Loading complete -->
+    {:then session}
+      <PopupHeader user_id={profile.id} {session} on:newTask={(event) => (editTaskId = event.detail)} />
+      <div class="container px-4 mt-2 text-base">
+        {#if editTaskId}
+          <div class="px-4 mt-2">
+            <EditItemView id={editTaskId} on:close={() => (editTaskId = '')} />
+          </div>
+        {:else}
+          <div class="pb-4">
             <ViewItemsList
               on:edit={(e) => (editTaskId = e.detail.id)}
               session_id={session?.id}
               profile_id={profile?.id}
             />
-          {:else if sessionLoadingState === 'loading'}
-            <div>
-              <p class="text-center font-bold animate-pulse my-8">Loading session...</p>
-            </div>
-          {:else if sessionLoadingState === 'error'}
-            <div>
-              <p class="text-center font-bold animate-pulse my-8">Error loading session</p>
-            </div>
-          {/if}
-        </div>
-      {/if}
-    </div>
+          </div>
+        {/if}
+      </div>
+      <!-- Loading failed -->
+    {:catch error}
+      <div class="container px-4 text-base">
+        <p class="text-center font-bold my-8">
+          Failed to load session
+          <br />
+          {error}
+          <ClearCache />
+        </p>
+      </div>
+    {/await}
   {/if}
 </QueryProvider>
-
-<style>
-  .container {
-    min-width: 500px;
-    max-width: 500px;
-  }
-</style>
