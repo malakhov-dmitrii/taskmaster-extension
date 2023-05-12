@@ -108,7 +108,7 @@
     let session;
     const mySessions = await pb.collection('sessions').getFullList<SessionWithUser>({
       expand: 'users',
-      filter: `users.telegram_id="${userMe.telegram_id}"`,
+      filter: `users.telegram_id ?= "${userMe.telegram_id}"`,
       sort: '-created',
     });
 

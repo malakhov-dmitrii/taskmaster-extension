@@ -6,7 +6,7 @@ export const updateTasksBadge = async (url: string) => {
   const storage = await chrome.storage.sync.get();
   const code = storage.code;
 
-  if (url.includes('web.telegram.org')) {
+  if (url?.includes('web.telegram.org')) {
     if (code) {
       const codeRecord = await pb.collection('verification_codes').getOne(code);
       if (!codeRecord) {
