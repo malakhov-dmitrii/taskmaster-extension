@@ -9,6 +9,7 @@
   import Button from 'src/ui/Button.svelte';
   import DatePreset from 'src/components/DatePreset.svelte';
   import { updateTasksBadge } from 'src/lib/updateTasksBadge';
+  import * as amplitude from '@amplitude/analytics-browser';
 
   dayjs.extend(utc);
   dayjs.extend(timezone);
@@ -55,6 +56,7 @@
         data = res.data;
       },
       onSettled: () => {
+        amplitude.track('task_update');
         loading = false;
         // window.location.reload();
       },

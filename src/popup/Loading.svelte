@@ -5,8 +5,18 @@
   import { pb } from 'src/lib/db';
   import type { Profile } from 'src/lib/types';
   import { onMount } from 'svelte';
+  import * as amplitude from '@amplitude/analytics-browser';
 
   $: profilePromise = null as Promise<Profile | null>;
+
+  function id(_profile: Profile) {
+    const identifyEvent = new amplitude.Identify();
+    identifyEvent.set('telegram_id', _profile?.telegram_id);
+    identifyEvent.set('name', _profile?.full_name);
+    identifyEvent.set('username', _profile?.username);
+    identifyEvent.set('id', _profile?.id);
+    amplitude.identify(identifyEvent);
+  }
 
   async function loadProfile() {
     let _profile = null as Profile | null;
@@ -24,6 +34,7 @@
       const key = `profile_for_code/${s.code}`;
       if (s[key]) {
         _profile = s[key];
+        id(_profile);
         return _profile;
       }
 
@@ -43,6 +54,7 @@
       }
     }
 
+    id(_profile);
     return _profile;
   }
 

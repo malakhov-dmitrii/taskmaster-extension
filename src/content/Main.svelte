@@ -7,6 +7,7 @@
   import dayjs from 'dayjs';
   import { badgeIncrement, cn } from 'src/lib/utils';
   export const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
+  import * as amplitude from '@amplitude/analytics-browser';
 
   let open = false;
   $: selection = null as Selection | null;
@@ -132,6 +133,13 @@
     const res = await pb.collection('tasks').create(newTask);
     created = true;
     loading = false;
+
+    amplitude.track('task created', {
+      task_id: res.id,
+      session_id: session.id,
+      user_id: profile.id,
+      companion_id: companionId,
+    });
 
     chrome.runtime.sendMessage('badgeIncrement');
     setTimeout(() => {

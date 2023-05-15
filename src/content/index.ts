@@ -1,6 +1,8 @@
 // import 'virtual:windi.css';
 import Main from 'src/content/Main.svelte';
-import { storage } from '../storage';
+import * as amplitude from '@amplitude/analytics-browser';
+
+amplitude.init('44555c92ae8880f2e94b64aa87a5f0e1');
 
 // Some global styles on the page
 import './styles.css';

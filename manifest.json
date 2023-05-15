@@ -1,7 +1,7 @@
 {
   "name": "VA Task Manager",
   "description": "Extension designed to help virtual assistants and their clients manage tasks effortlessly within Telegram chats",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "manifest_version": 3,
   "icons": {
     "16": "src/assets/icons/get_started16.png",

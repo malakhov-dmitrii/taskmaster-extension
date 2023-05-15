@@ -7,6 +7,7 @@
   import EmptyList from 'src/components/EmptyList.svelte';
   import { pick } from 'lodash';
   import { updateTasksBadge } from 'src/lib/updateTasksBadge';
+  import * as amplitude from '@amplitude/analytics-browser';
 
   export const pb = new PocketBase('https://pocketbase-malakhov.fly.dev');
 
@@ -37,6 +38,7 @@
       queryClient.setQueryData(['todos', session_id, profile_id], context.previousTodos);
     },
     onSettled: () => {
+      amplitude.track('task_delete');
       queryClient.invalidateQueries(['todos', session_id, profile_id]);
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         updateTasksBadge(tabs[0].url);
@@ -77,11 +79,16 @@
       queryClient.setQueryData(['todos', session_id, profile_id], context.previousTodos);
     },
     onSettled: () => {
+      amplitude.track('task_toggle_assignee');
       queryClient.invalidateQueries(['todos', session_id, profile_id]);
     },
   });
 
   const handleCheck = async (todo: Task) => {
+    amplitude.track('task_check_toggle', {
+      is_completed: !todo.is_completed,
+      task_id: todo.id,
+    });
     await pb.collection('tasks').update(todo.id, { is_completed: !todo.is_completed });
     todo.is_completed = !todo.is_completed;
     $query.refetch();

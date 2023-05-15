@@ -2,6 +2,8 @@
   import Button from '../ui/Button.svelte';
   import { onMount } from 'svelte';
 
+  import * as amplitude from '@amplitude/analytics-browser';
+
   let code: string = '';
   // const bot_url = import.meta.env.DEV
   //   ? 'https://t.me/va_assistant_task_trackerdev_bot'
@@ -20,7 +22,13 @@
   </div>
 
   <div class="flex justify-center">
-    <Button disabled={!code} on:click={() => window.open(`${bot_url}?start=${code}`)}>Sign up with Telegram</Button>
+    <Button
+      disabled={!code}
+      on:click={() => {
+        amplitude.track('sign_up', { code });
+        window.open(`${bot_url}?start=${code}`);
+      }}>Sign up with Telegram</Button
+    >
   </div>
 </div>
 
